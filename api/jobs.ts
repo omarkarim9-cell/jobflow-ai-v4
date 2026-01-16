@@ -1,11 +1,13 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type { Job } from '../types';
 import { JobStatus } from '../types';
 import { neon } from '@neondatabase/serverless';
 import { verifyToken } from '@clerk/backend';
 
-const CLERK_JWT_KEY = process.env.CLERK_JWT_KEY;
-const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY;
+type NextApiRequest = any;
+type NextApiResponse = any;
+
+const CLERK_JWT_KEY = process.env.CLERK_JWT_KEY!;
+const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY!;
 
 let sqlSingleton: ReturnType<typeof neon> | null = null;
 function getSql() {
@@ -18,14 +20,16 @@ function getSql() {
   return sqlSingleton;
 }
 
-async function getUserIdFromRequest(req: VercelRequest): Promise<string | null> {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+async function getUserIdFromRequest(req: NextApiRequest): Promise<string | null> {
+  const authHeader = req.headers.authorization as string | string[] | undefined;
+  const header = Array.isArray(authHeader) ? authHeader[0] : authHeader;
+
+  if (!header || !header.startsWith('Bearer ')) {
     console.error('[JOBS] Missing or invalid Authorization header');
     return null;
   }
 
-  const token = authHeader.substring(7);
+  const token = header.substring(7);
 
   try {
     const verified = await verifyToken(token, {
@@ -33,12 +37,7 @@ async function getUserIdFromRequest(req: VercelRequest): Promise<string | null> 
       secretKey: CLERK_SECRET_KEY,
     });
 
-    const userId =
-      (verified as any).sub ||
-      (verified as any).userId ||
-      (verified as any).userid ||
-      null;
-
+    const userId = (verified as any).sub || (verified as any).userId || (verified as any).userid || null;
     if (!userId) {
       console.error('[JOBS] No userId in verified token payload');
       return null;
@@ -51,7 +50,7 @@ async function getUserIdFromRequest(req: VercelRequest): Promise<string | null> 
   }
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
@@ -61,7 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  console.log('[JOBS] HANDLER START, NODE_ENV =', process.env.NODE_ENV, 'method:', req.method);
+  console.log('[JOBS] HANDLER START, method:', req.method);
 
   try {
     const userId = await getUserIdFromRequest(req);
@@ -71,55 +70,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const sql = getSql();
 
+    // ✅ GET - Fix FullQueryResults<boolean> error
     if (req.method === 'GET') {
-      const result = await sql<any[]>`
-        SELECT
-          id,
-          userid,
-          title,
-          company,
-          description,
-          status,
-          source,
-          applicationurl,
-          customresume,
-          coverletter,
-          matchscore,
-          data,
-          createdat,
-          updatedat
-        FROM jobs
-        WHERE userid = ${userId}
-        ORDER BY createdat DESC
+      const rawResult = await sql`
+        SELECT id, userid, title, company, description, status, source,
+               applicationurl, customresume, coverletter, matchscore, data,
+               createdat, updatedat
+        FROM jobs WHERE userid = ${userId} ORDER BY createdat DESC
       `;
 
+      // ✅ Fix: Handle FullQueryResults + convert to array
+      const result = Array.isArray(rawResult) ? rawResult : (rawResult as any).rows || [];
+
       const jobs: Job[] = result.map((job: any) => {
-        const data = job.data || {};
+        const data = typeof job.data === 'string' ? JSON.parse(job.data) : (job.data || {});
         return {
-          id: job.id,
-          title: job.title,
-          company: job.company,
-          location: data.location || '',
-          salaryRange: data.salaryRange,
-          description: job.description,
+          id: job.id || '',
+          title: job.title || '',
+          company: job.company || '',
+          location: (data as any).location || '',
+          salaryRange: (data as any).salaryRange || null,
+          description: job.description || '',
           source: job.source || 'Manual',
-          detectedAt: job.createdat,
-          status: job.status || JobStatus.DETECTED,
+          detectedAt: job.createdat || '',
+          status: (job.status as JobStatus) || 'detected',
           matchScore: job.matchscore ?? 0,
-          requirements: data.requirements,
-          notes: data.notes,
-          logoUrl: data.logoUrl,
-          applicationUrl: job.applicationurl,
+          requirements: (data as any).requirements || null,
+          notes: (data as any).notes || null,
+          logoUrl: (data as any).logoUrl || null,
+          applicationUrl: job.applicationurl || null,
           customizedResume: job.customresume || null,
           coverLetter: job.coverletter || null,
+          dateApplied: job.createdat || '',
         };
       });
 
       return res.status(200).json({ jobs });
     }
 
+    // ✅ POST - Fix FullQueryResults<boolean> error
     if (req.method === 'POST') {
-      const body = req.body as Job;
+      let body: any;
+      try {
+        body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      } catch {
+        return res.status(400).json({ error: 'Invalid JSON' });
+      }
+
       if (!body || !body.id) {
         return res.status(400).json({ error: 'Invalid Job payload' });
       }
@@ -132,102 +129,64 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         logoUrl: body.logoUrl,
       });
 
-      const result = await sql<any[]>`
-        INSERT INTO jobs (
-          id,
-          userid,
-          title,
-          company,
-          description,
-          status,
-          source,
-          applicationurl,
-          customresume,
-          coverletter,
-          matchscore,
-          data,
-          createdat,
-          updatedat
-        )
-        VALUES (
-          ${body.id},
-          ${userId},
-          ${body.title},
-          ${body.company},
-          ${body.description},
-          ${body.status || JobStatus.DETECTED},
-          ${body.source || 'Manual'},
-          ${body.applicationUrl || null},
-          ${body.customizedResume || null},
-          ${body.coverLetter || null},
-          ${body.matchScore ?? 0},
-          ${jobData},
-          NOW(),
-          NOW()
-        )
-        ON CONFLICT (id) DO UPDATE
-        SET
-          title = EXCLUDED.title,
-          company = EXCLUDED.company,
-          description = EXCLUDED.description,
-          status = EXCLUDED.status,
-          customresume = EXCLUDED.customresume,
-          coverletter = EXCLUDED.coverletter,
-          data = EXCLUDED.data,
-          updatedat = NOW()
-        RETURNING
-          id,
-          userid,
-          title,
-          company,
-          description,
-          status,
-          source,
-          applicationurl,
-          customresume,
-          coverletter,
-          matchscore,
-          data,
-          createdat,
-          updatedat
+      const rawResult = await sql`
+        INSERT INTO jobs (id, userid, title, company, description, status, source,
+                         applicationurl, customresume, coverletter, matchscore, data,
+                         createdat, updatedat)
+        VALUES (${body.id}, ${userId}, ${body.title}, ${body.company},
+                ${body.description}, ${body.status || 'detected'},
+                ${body.source || 'Manual'}, ${body.applicationUrl || null},
+                ${body.customizedResume || null}, ${body.coverLetter || null},
+                ${body.matchScore ?? 0}, ${jobData}, NOW(), NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          title = EXCLUDED.title, company = EXCLUDED.company,
+          description = EXCLUDED.description, status = EXCLUDED.status,
+          customresume = EXCLUDED.customresume, coverletter = EXCLUDED.coverletter,
+          data = EXCLUDED.data, updatedat = NOW()
+        RETURNING id, userid, title, company, description, status, source,
+                  applicationurl, customresume, coverletter, matchscore, data,
+                  createdat, updatedat
       `;
 
+      // ✅ Fix: Handle FullQueryResults + convert to array
+      const result = Array.isArray(rawResult) ? rawResult : (rawResult as any).rows || [];
       const job = result[0];
-      const data = job.data || {};
+      if (!job) {
+        return res.status(500).json({ error: 'Insert failed' });
+      }
 
+      const data = typeof job.data === 'string' ? JSON.parse(job.data) : (job.data || {});
       const savedJob: Job = {
-        id: job.id,
-        title: job.title,
-        company: job.company,
-        location: data.location || '',
-        salaryRange: data.salaryRange,
-        description: job.description,
+        id: job.id || '',
+        title: job.title || '',
+        company: job.company || '',
+        location: (data as any).location || '',
+        salaryRange: (data as any).salaryRange || null,
+        description: job.description || '',
         source: job.source || 'Manual',
-        detectedAt: job.createdat,
-        status: job.status || JobStatus.DETECTED,
+        detectedAt: job.createdat || '',
+        status: (job.status as JobStatus) || 'detected',
         matchScore: job.matchscore ?? 0,
-        requirements: data.requirements,
-        notes: data.notes,
-        logoUrl: data.logoUrl,
-        applicationUrl: job.applicationurl,
+        requirements: (data as any).requirements || null,
+        notes: (data as any).notes || null,
+        logoUrl: (data as any).logoUrl || null,
+        applicationUrl: job.applicationurl || null,
         customizedResume: job.customresume || null,
         coverLetter: job.coverletter || null,
+        dateApplied: job.createdat || '',
       };
 
       return res.status(200).json({ success: true, job: savedJob });
     }
 
+    // DELETE
     if (req.method === 'DELETE') {
-      const jobId = req.query.id;
-      if (!jobId || typeof jobId !== 'string') {
+      const jobId = req.query.id as string;
+      if (!jobId) {
         return res.status(400).json({ error: 'Missing Job ID' });
       }
 
-      await sql`
-        DELETE FROM jobs
-        WHERE id = ${jobId} AND userid = ${userId}
-      `;
-
+      await sql`DELETE FROM jobs WHERE id = ${jobId} AND userid = ${userId}`;
       return res.status(200).json({ success: true });
     }
 

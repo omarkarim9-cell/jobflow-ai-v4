@@ -1,8 +1,16 @@
-
-import { VercelRequest, VercelResponse } from '@vercel/node';
 import * as ClerkServer from '@clerk/backend';
 import { GoogleGenAI, Type } from "@google/genai";
+interface VercelRequest {
+  method: string;
+  body: any;
+  json: () => Promise<any>;
+}
 
+interface VercelResponse {
+  setHeader: (name: string, value: string) => VercelResponse;
+  status: (code: number) => VercelResponse;
+  json: (data: any) => VercelResponse;
+}
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 

@@ -1,47 +1,32 @@
-// types.ts - FIXED (0 errors)
-export enum ViewState {
-  DASHBOARD = 'dashboard',
-  JOBS = 'jobs',
-  SETTINGS = 'settings'
-}
-
+// types.ts - COMPLETE (replace entire file)
 export interface UserProfile {
-  id?: string;
-  name?: string;
-  email: string;
-  phone?: string;
-  location?: string;
-  summary?: string;
-}
-
-export interface EmailAccount {
   id: string;
   email: string;
+  phone: string;
+  name?: string;
+  location: string;
+  summary: string;
 }
 
-export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 export interface Job {
   id: string;
   title: string;
   company: string;
-  status: JobStatus;
+  location: string;
+  salaryRange: string | null;
+  description: string;
+  source: string;
+  detectedAt: string;
+  status: string;  // JobStatus.DETECTED etc.
+  matchScore: number;
+  requirements: string[] | null;
+  notes: string | null;
+  logoUrl: string | null;
+  applicationUrl: string | null;
+  customizedResume: string | null;
+  coverLetter: string | null;
   dateApplied: string;
-  location?: string;        // ADD
-  salaryRange?: string;     // ADD  
-  requirements?: string[];  // ADD
-  notes?: string;           // ADD
-  logoUrl?: string;         // ADD
-  description?: string;     // ADD
-  source?: string;          // ADD
-  applicationUrl?: string;  // ADD
-  customizedResume?: string;// ADD
-  coverLetter?: string;     // ADD
-  matchScore?: number;      // ADD
 }
-export enum JobStatus {
-  APPLIED = 'applied',
-  INTERVIEW = 'interview',
-  OFFER = 'offer',
-  REJECTED = 'rejected',
-  DETECTED = 'detected'     // ADD
-}
+
+export type JobStatus = 'detected' | 'applied' | 'interview' | 'offer' | 'rejected';
+export type NotificationType = 'success' | 'error' | 'info' | 'warning';

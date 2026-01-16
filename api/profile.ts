@@ -1,20 +1,11 @@
-// pages/api/profile.ts
-import type { NextApiRequest, NextApiResponse } from 'next';
 import postgres from 'postgres';
-import { UserProfile } from '../../types'; // adjust relative path
+import { UserProfile } from '../types';
 
-// just added
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  console.log('🔍 PROFILE BODY:', JSON.stringify(body, null, 2));  // ADD THIS
-  const userId = body.data?.id || body.id;
-  console.log('🔍 USER ID:', userId);  // ADD THIS
+type NextApiRequest = any;
+type NextApiResponse = any;
 
-const sql = postgres(process.env.DATABASE_URL as string, {
-  ssl: 'require',
-});
+const sql = postgres(process.env.DATABASE_URL as string, { ssl: 'require' });
 
-// Row type returned from Neon
 interface ProfileRow {
   id: number;
   clerk_user_id: string;
@@ -31,91 +22,84 @@ interface ProfileRow {
   updated_at: Date;
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse,
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,X-Clerk-User-Id');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  console.log('[PROFILE] HANDLER START, method:', req.method);
+
   try {
-    const userId = req.headers['x-clerk-user-id'] as string | undefined;
+    const userId = req.headers['x-clerk-user-id'] as string || req.body?.data?.id || req.body?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized: missing user id' });
     }
 
+    // GET - COMPLETE UserProfile
     if (req.method === 'GET') {
-      const rows = await sql<ProfileRow[]>`
-        SELECT
-          id,
-          clerk_user_id,
-          full_name,
-          email,
-          phone,
-          resume_content,
-          resume_file_name,
-          preferences,
-          connected_accounts,
-          plan,
-          daily_ai_credits,
-          total_ai_used,
-          updated_at
-        FROM profiles
+      const rawResult = await sql`
+        SELECT id, clerk_user_id, full_name, email, phone, resume_content, 
+               resume_file_name, preferences, connected_accounts, plan, 
+               daily_ai_credits, total_ai_used, updated_at
+        FROM profiles 
         WHERE clerk_user_id = ${userId}
         LIMIT 1
       `;
 
+      const rows = Array.isArray(rawResult) ? rawResult : (rawResult as any).rows || [];
+      
       if (!rows.length) {
-        return res.status(200).json(null);
+        const emptyProfile: UserProfile = {
+          id: userId,
+          email: '',
+          phone: '',
+          location: '',
+          summary: ''
+        };
+        return res.status(200).json(emptyProfile);
       }
 
       const row = rows[0];
-
       const profile: UserProfile = {
         id: row.clerk_user_id,
-        fullName: row.full_name || '',
         email: row.email || '',
         phone: row.phone || '',
-        resumeContent: row.resume_content || '',
-        resumeFileName: row.resume_file_name || '',
-        preferences: row.preferences || {
-          targetRoles: [],
-          targetLocations: [],
-          minSalary: '',
-          remoteOnly: false,
-          language: 'en',
-        },
-        connectedAccounts: row.connected_accounts || [],
-        plan: row.plan || 'free',
-        dailyAiCredits: row.daily_ai_credits ?? 0,
-        totalAiUsed: row.total_ai_used ?? 0,
-        updatedAt: row.updated_at,
+        location: row.full_name || '',
+        summary: row.resume_content || ''
       };
 
       return res.status(200).json(profile);
     }
+
+    // POST - COMPLETE UserProfile
     if (req.method === 'POST') {
-      const body = req.body as UserProfile;
+      let body: any;
+      try {
+        body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      } catch {
+        return res.status(400).json({ error: 'Invalid JSON' });
+      }
 
-      // 🔧 CLERK WEBHOOK DATA MAPPING
       const clerkUserId = req.headers['x-clerk-user-id'] as string || body.data?.id || body.id;
-      const email = body.data?.email_addresses?.[0]?.email_address || body.email || '';
-      const fullName = body.data?.full_name || body.fullName || '';
 
-      console.log('🔍 WEBHOOK DATA:', { clerkUserId, email, fullName });
+      console.log('🔍 WEBHOOK DATA:', { clerkUserId });
 
-      // Normalize JSON fields
-      const prefs = body.preferences && typeof body.preferences === 'object'
-        ? body.preferences
-        : { targetRoles: [], targetLocations: [], minSalary: '', remoteOnly: false, language: 'en' };
-
-      const connected = Array.isArray(body.connectedAccounts) ? body.connectedAccounts : [];
-
-      // 🔧 NEON PARAMS FIX - explicit positional params
-      const query = `
+      const rawResult = await sql`
         INSERT INTO profiles (
           clerk_user_id, full_name, email, phone, resume_content, resume_file_name,
           preferences, connected_accounts, plan, daily_ai_credits, total_ai_used, updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9, $10, $11, NOW())
+        VALUES (
+          ${clerkUserId}, ${body.location || ''}, ${body.email || ''}, ${body.phone || ''}, 
+          ${body.summary || ''}, '', ${JSON.stringify({})}::jsonb, ${JSON.stringify([])}::jsonb, 
+          'free', 0, 0, NOW()
+        )
         ON CONFLICT (clerk_user_id) DO UPDATE SET
           full_name = EXCLUDED.full_name, email = EXCLUDED.email, phone = EXCLUDED.phone,
           resume_content = EXCLUDED.resume_content, resume_file_name = EXCLUDED.resume_file_name,
@@ -125,37 +109,19 @@ export default async function handler(
         RETURNING *
       `;
 
-      const rows = await sql < ProfileRow[] > [query,
-        clerkUserId,
-        fullName,
-        email,
-        '', '', '',  // phone, resume fields empty
-        prefs,
-        connected,
-        'free',
-        0,
-        0
-      ];
+      const rows = Array.isArray(rawResult) ? rawResult : (rawResult as any).rows || [];
+      const row = rows[0] || { clerk_user_id: clerkUserId, email: '', phone: '', full_name: '', resume_content: '' };
 
-      const row = rows[0];
       const saved: UserProfile = {
         id: row.clerk_user_id,
-        fullName: row.full_name || '',
-        email: row.email || '',
-        phone: row.phone || '',
-        resumeContent: row.resume_content || '',
-        resumeFileName: row.resume_file_name || '',
-        preferences: row.preferences || prefs,
-        connectedAccounts: row.connected_accounts || connected,
-        plan: row.plan || 'free',
-        dailyAiCredits: row.daily_ai_credits ?? 0,
-        totalAiUsed: row.total_ai_used ?? 0,
-        updatedAt: row.updated_at,
+        email: row.email || body.email || '',
+        phone: row.phone || body.phone || '',
+        location: row.full_name || body.location || '',
+        summary: row.resume_content || body.summary || ''
       };
 
       return res.status(200).json(saved);
     }
-        }
 
     res.setHeader('Allow', ['GET', 'POST']);
     return res.status(405).json({ error: 'Method not allowed' });
