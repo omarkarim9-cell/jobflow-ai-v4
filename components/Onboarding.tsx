@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useUser, useAuth } from '@clerk/clerk-react';
-import { UserProfile } from '../types';
+import type { UserProfile, Job, JobStatus } from '../app-types';
 import { Upload, User, Briefcase, Check, Globe, Loader2, FileText } from 'lucide-react';
 import { createVirtualDirectory } from '../services/fileSystemService';
 import { NotificationType } from './NotificationToast';

@@ -1,5 +1,5 @@
 import postgres from 'postgres';
-import { UserProfile } from '../types';
+import type { UserProfile, Job, JobStatus } from '../app-types';
 
 type NextApiRequest = any;
 type NextApiResponse = any;

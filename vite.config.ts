@@ -5,8 +5,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: { 
   alias: {
-      '../types': path.resolve(__dirname, './types.ts'),
-      './types': path.resolve(__dirname, './types.ts')
+     
     }
   },
   

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserProfile } from '../types';
+import type { UserProfile, Job, JobStatus } from '../app-types';
 import { 
     Book, 
     Mail, 
