@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Job, JobStatus } from '../types';
+import { Job, JobStatus } from '../app-types';
 import { Search, ExternalLink, Trash2, ArrowUpDown, Archive, CheckCircle2, Clock, XCircle, Briefcase } from 'lucide-react';
 
 interface ApplicationTrackerProps {

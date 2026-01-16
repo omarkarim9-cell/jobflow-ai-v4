@@ -1,5 +1,5 @@
-import type { Job } from '../types';
-import { JobStatus } from '../types';
+import type { Job } from '../app-types';
+import { JobStatus } from '../app-types';
 import { neon } from '@neondatabase/serverless';
 import { verifyToken } from '@clerk/backend';
 

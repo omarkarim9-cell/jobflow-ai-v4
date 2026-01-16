@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { Database, Terminal, Send, User as UserIcon, Briefcase, CheckCircle, AlertCircle, Loader2, Sparkles, RefreshCcw } from 'lucide-react';
 import { saveUserProfile, saveJobToDb } from '../services/dbService';
-import { UserProfile, Job, JobStatus } from '../types';
+import { UserProfile, Job, JobStatus } from '../app-types';
 
 export const DebugView: React.FC = () => {
     const { getToken } = useAuth();

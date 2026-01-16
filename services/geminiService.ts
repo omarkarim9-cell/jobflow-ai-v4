@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { Job, JobStatus } from '../types';
+import { Job, JobStatus } from '../app-types';
 
 const getModel = (modelName: string) => {
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;

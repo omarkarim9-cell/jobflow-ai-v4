@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Job, UserProfile } from '../types';
+import { Job, UserProfile } from '../app-types';
 // Fixed non-existent 'Browser' and unused 'ArrowRight' imports from lucide-react
 import { 
     Loader2, 

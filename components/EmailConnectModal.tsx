@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { EmailAccount } from '../types';
+import { EmailAccount } from '../app-types';
 import { X, ShieldCheck, Loader2, ExternalLink, Copy, Check, Info, Key, Clock } from 'lucide-react';
 import { fetchGmailProfile } from '../services/gmailService';
 

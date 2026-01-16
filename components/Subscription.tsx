@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserProfile, isSubscriptionValid } from '../types';
+import { UserProfile, isSubscriptionValid } from '../app-types';
 import { Check, Star, CreditCard, ShieldCheck, Loader2, X, FileText, Info, Clock, AlertTriangle } from 'lucide-react';
 import { translations, LanguageCode } from '../services/localization';
 

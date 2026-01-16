@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Search, Loader2, Navigation, ExternalLink } from 'lucide-react';
 import { searchNearbyJobs } from '../services/geminiService';
-import { Job } from '../types';
+import { Job } from '../app-types';
 
 interface JobMapProps {
   onImport: (jobs: Job[]) => void;

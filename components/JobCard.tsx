@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Job, JobStatus } from '../types';
+import { Job, JobStatus } from '../app-types';
 import { Building2, MapPin, Calendar, StickyNote, FileText, Sparkles, ExternalLink, Eye } from 'lucide-react';
 import { openSafeApplicationUrl } from '../services/automationService';
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserProfile, Job, NotificationType } from '../types';
+import { UserProfile, Job, NotificationType } from '../app-types';
 
 interface SettingsProps {
     userProfile: UserProfile;

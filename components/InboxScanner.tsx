@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Job, JobStatus, EmailAccount, UserPreferences, isSubscriptionValid, UserProfile } from '../types';
+import { Job, JobStatus, EmailAccount, UserPreferences, isSubscriptionValid, UserProfile } from '../app-types';
 import { Mail, Search, Trash2, AlertCircle, Settings, RefreshCw, Calendar, Link, X, Loader2, StopCircle } from 'lucide-react';
 import { extractJobsFromEmailHtml } from '../services/geminiService';
 import { localExtractJobs } from '../services/localAiService'; // Direct Import

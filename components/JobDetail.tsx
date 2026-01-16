@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Job, JobStatus, UserProfile } from '../types';
+import { Job, JobStatus, UserProfile } from '../app-types';
 import { generateCoverLetter, customizeResume } from '../services/geminiService';
 import { 
     FileText, 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Job, JobStatus } from '../types';
+import { Job, JobStatus } from '../app-types';
 import { X, Link as LinkIcon, Loader2, Sparkles, Edit3 } from 'lucide-react';
 import { extractJobFromUrl } from '../services/geminiService';
 

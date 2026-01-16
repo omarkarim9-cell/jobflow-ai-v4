@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useUser, useAuth, UserButton } from '@clerk/clerk-react';
-import { Job, JobStatus, ViewState, UserProfile, EmailAccount } from '../types';
+import { Job, JobStatus, ViewState, UserProfile, EmailAccount } from '../app-types';
 import { DashboardStats } from './DashboardStats';
 import { JobCard } from './JobCard';
 import { InboxScanner } from './InboxScanner';

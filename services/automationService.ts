@@ -1,4 +1,4 @@
-import { Job, UserProfile } from '../types';
+import { Job, UserProfile } from '../app-types';
 import { getSmartApplicationUrl } from './geminiService';
 
 /**
