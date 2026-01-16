@@ -1,7 +1,7 @@
-// types.ts - COMPLETE VERSION
+// types.ts - FIXED (0 errors)
 export enum JobStatus {
   APPLIED = 'applied',
-  INTERVIEW = 'interview', 
+  INTERVIEW = 'interview',
   OFFER = 'offer',
   REJECTED = 'rejected'
 }
@@ -18,18 +18,20 @@ export interface Job {
   company: string;
   status: JobStatus;
   dateApplied: string;
-  // add other fields as needed
 }
 
 export interface UserProfile {
-  id: string;
-  email: string;
+  id?: string;
   name?: string;
-  // add other fields
+  email: string;
+  phone?: string;
+  location?: string;
+  summary?: string;
 }
 
 export interface EmailAccount {
   id: string;
   email: string;
-  // add other fields
 }
+
+export type NotificationType = 'success' | 'error' | 'warning' | 'info';
