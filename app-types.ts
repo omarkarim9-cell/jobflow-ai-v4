@@ -1,6 +1,7 @@
 // types.ts - COMPLETE (replace entire file)
 export interface UserProfile {
   id: string;
+  preferences?: any;
   email: string;
   phone: string;
   name?: string;

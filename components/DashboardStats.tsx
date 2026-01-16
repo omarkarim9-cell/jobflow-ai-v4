@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Job, JobStatus, UserProfile } from '../app-types.ts';
+import type { Job, JobStatus, UserProfile } from '../app-types';
 import {
   Send,
   Users,
@@ -36,15 +36,15 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
   userProfile,
 }) => {
   const lang = userProfile?.preferences?.language || 'en';
-  const t = (key: keyof (typeof translations)['en']) =>
-    translations[lang][key] || key;
+  // Replace lines 39-40 with:
+  const t = (key: keyof typeof translations.en) => translations.en[key];
 
   const trackedJobs = useMemo(
-    () => jobs.filter(j => j.status !== JobStatus.DETECTED),
+    () => jobs.filter(j => j.status !==   'detected'),
     [jobs]
   );
   const detectedJobsCount = useMemo(
-    () => jobs.filter(j => j.status === JobStatus.DETECTED).length,
+    () => jobs.filter(j => j.status ===   'detected').length,
     [jobs]
   );
 
@@ -54,13 +54,13 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
       active: trackedJobs.length,
       applied: trackedJobs.filter(
         j =>
-          j.status === JobStatus.APPLIED_AUTO ||
-          j.status === JobStatus.APPLIED_MANUAL
+          j.status ===  'applied_auto' ||
+          j.status ===  'applied_manual'
       ).length,
       interviews: trackedJobs.filter(
-        j => j.status === JobStatus.INTERVIEW
+        j => j.status ===  'interview'
       ).length,
-      offers: trackedJobs.filter(j => j.status === JobStatus.OFFER).length,
+      offers: trackedJobs.filter(j => j.status ===  'offer').length,
     };
   }, [jobs, trackedJobs]);
 
