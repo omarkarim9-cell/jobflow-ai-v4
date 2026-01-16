@@ -1,8 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-
+import path from 'path';
 export default defineConfig({
   plugins: [react()],
+  resolve: { 
+  alias: {
+      '../types': path.resolve(__dirname, './types.ts'),
+      './types': path.resolve(__dirname, './types.ts')
+    }
+  },
+  
   build: {
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
@@ -12,6 +19,11 @@ export default defineConfig({
           clerk: ['@clerk/clerk-react'],
         },
       },
+	   external: [  // ✅ ADD THIS
+        '@neondatabase/serverless',
+        '@clerk/backend',
+        'postgres'
+      ]
     },
   },
 });
