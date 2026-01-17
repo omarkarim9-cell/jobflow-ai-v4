@@ -1,9 +1,22 @@
 
 import React from 'react';
-import { Job, JobStatus } from '../app-types';
+import type { JobStatus } from '../app-types';
 import { Building2, MapPin, Calendar, StickyNote, FileText, Sparkles, ExternalLink, Eye } from 'lucide-react';
 import { openSafeApplicationUrl } from '../services/automationService';
-
+//import { JobStatus } from '@/types/app-types';  // Full named import (type + value)
+interface Job {
+  id: string;
+  title: string;
+  company: string;
+  status: JobStatus;
+  location: string;
+  detectedAt: string;
+  applicationUrl?: string;
+  logoUrl?: string;
+  matchScore: number;
+  customizedResume?: string;
+  coverLetter?: string;
+}
 interface JobCardProps {
   job: Job;
   onClick: (job: Job) => void;
@@ -14,17 +27,18 @@ interface JobCardProps {
 }
 
 export const JobCard: React.FC<JobCardProps> = ({ job, onClick, isSelected, isChecked, onToggleCheck, onAutoApply }) => {
-  const getStatusColor = (status: JobStatus) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case JobStatus.DETECTED: return 'bg-blue-100 text-blue-700 border-blue-200';
-      case JobStatus.SAVED: return 'bg-indigo-50 text-indigo-600 border-indigo-200';
-      case JobStatus.APPLIED_AUTO: return 'bg-green-100 text-green-700 border-green-200';
-      case JobStatus.APPLIED_MANUAL: return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case JobStatus.REJECTED: return 'bg-red-100 text-red-700 border-red-200';
-      case JobStatus.INTERVIEW: return 'bg-purple-100 text-purple-700 border-purple-200';
+      case 'DETECTED': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'SAVED': return 'bg-indigo-50 text-indigo-600 border-indigo-200';
+      case 'APPLIED_AUTO': return 'bg-green-100 text-green-700 border-green-200';
+      case 'APPLIED_MANUAL': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'REJECTED': return 'bg-red-100 text-red-700 border-red-200';
+      case 'INTERVIEW': return 'bg-purple-100 text-purple-700 border-purple-200';
       default: return 'bg-slate-100 text-slate-700 border-slate-200';
     }
   };
+  
 
   const handleCheckboxClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -47,7 +61,8 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onClick, isSelected, isCh
   const handleApply = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (job.applicationUrl) {
-      openSafeApplicationUrl(job);
+      openSafeApplicationUrl(job as any);
+
     }
   };
 
@@ -94,7 +109,8 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onClick, isSelected, isCh
              </p>
            </div>
         </div>
-        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border whitespace-nowrap shrink-0 ${getStatusColor(job.status)}`}>
+        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border whitespace-nowrap shrink-0 ${getStatusColor(job.status as JobStatus)}`}>
+
           {job.status}
         </span>
       </div>
