@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
       // These will be replaced at build time with values from your .env files or environment.
       'process.env.API_KEY': JSON.stringify(env.API_KEY || ''),
       'process.env.VITE_CLERK_PUBLISHABLE_KEY': JSON.stringify(env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_d2FudGVkLWRpbmdvLTkxLmNsZXJrLmFjY291bnRzLmRldiQ'),
-      'process.env': '{}',
+      //'process.env': '{}',
       'process.platform': JSON.stringify('browser'),
     },
     build: {
