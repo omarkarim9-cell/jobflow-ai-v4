@@ -1,6 +1,22 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Job, JobStatus, EmailAccount, UserPreferences, isSubscriptionValid, UserProfile } from '../app-types';
+import type { Job, UserProfile } from '../app-types';
+interface UserPreferences {
+    autoApplyEnabled: boolean;
+    maxApplicationsPerDay: number;
+    targetRoles: string[];
+    targetLocations: string[];
+    remoteOnly: boolean;
+}
+  
+interface EmailAccount {
+    id: string;
+    emailAddress: string;
+    email: string;
+    accessToken: string;
+    provider: string;
+}
+  
 import { Mail, Search, Trash2, AlertCircle, Settings, RefreshCw, Calendar, Link, X, Loader2, StopCircle } from 'lucide-react';
 import { extractJobsFromEmailHtml } from '../services/geminiService';
 import { localExtractJobs } from '../services/localAiService'; // Direct Import
@@ -188,7 +204,7 @@ export const InboxScanner: React.FC<InboxScannerProps> = ({
                  showNotification("No matching jobs found. Try adjusting settings.", 'error');
               }
           } else {
-              const newJobs: Job[] = allJobs.map((job, index) => ({
+              const newJobs = allJobs.map((job, index) => ({
                   id: job.id || `imported-${Date.now()}-${index}`, 
                   title: job.title || 'Unknown Role',
                   company: job.company || 'Unknown Company',
@@ -197,14 +213,14 @@ export const InboxScanner: React.FC<InboxScannerProps> = ({
                   description: job.description || '',
                   source: 'Gmail',
                   detectedAt: new Date().toISOString(),
-                  status: JobStatus.DETECTED,
+                  status: 'DETECTED' as any,
                   matchScore: job.matchScore || 50,
                   requirements: [],
                   applicationUrl: job.applicationUrl
               }));
 
               try {
-                  onImport(newJobs);
+                  onImport(newJobs as any[]);
               } catch (e) {
                   console.error("Import failed", e);
                   showNotification("Failed to import jobs to list.", 'error');
@@ -283,7 +299,7 @@ export const InboxScanner: React.FC<InboxScannerProps> = ({
               if (isMounted.current) {
                   setEmails(mockEmails);
                   
-                  const mockJob: Job = {
+                  const mockJob = {
                       id: `imported-${sessionAccount.provider}-${Date.now()}`,
                       title: `Software Engineer (${sessionAccount.provider})`,
                       company: `Tech Co via ${sessionAccount.provider}`,
@@ -291,14 +307,15 @@ export const InboxScanner: React.FC<InboxScannerProps> = ({
                       description: `This job was detected from your ${sessionAccount.provider} connection.`,
                       source: sessionAccount.provider as any,
                       detectedAt: new Date().toISOString(),
-                      status: JobStatus.DETECTED,
+                      status: 'DETECTED' as any,
                       matchScore: 85,
                       requirements: ['Experience with API', 'React'],
                       applicationUrl: 'https://www.linkedin.com/jobs/',
                       salaryRange: '$120k - $160k'
                   };
                   
-                  setTimeout(() => onImport([mockJob]), 1500);
+                  setTimeout(() => onImport([mockJob as any]), 1500);
+
               }
           }
       } catch (e: any) {
